@@ -1,54 +1,30 @@
 #!/usr/bin/python3
-"""
-    python script that returns TODO list progress for a given employee ID
-"""
+
 import json
-import requests
 from sys import argv
 
-
-if __name__ == "__main__":
-    """
-        request user info by employee ID
-    """
-    request_employee = requests.get(
-        'https://jsonplaceholder.typicode.com/users/{}/'.format(argv[1]))
-    """
-        convert json to dictionary
-    """
-    employee = json.loads(request_employee.text)
-    """
-        extract employee name
-    """
-    employee_name = employee.get("name")
-
-    """
-        request user's TODO list
-    """
-    request_todos = requests.get(
-        'https://jsonplaceholder.typicode.com/users/{}/todos'.format(argv[1]))
-    """
-        dictionary to store task status in boolean format
-    """
-    tasks = {}
-    """
-        convert json to list of dictionaries
-    """
-    employee_todos = json.loads(request_todos.text)
-    """
-        loop through dictionary & get completed tasks
-    """
-    for dictionary in employee_todos:
-        tasks.update({dictionary.get("title"): dictionary.get("completed")})
-
-    """
-        return name, total number of tasks & completed tasks
-    """
-    EMPLOYEE_NAME = employee_name
-    TOTAL_NUMBER_OF_TASKS = len(tasks)
-    NUMBER_OF_DONE_TASKS = len([k for k, v in tasks.items() if v is True])
-    print("Employee {} is done with tasks({}/{}):".format(
-        EMPLOYEE_NAME, NUMBER_OF_DONE_TASKS, TOTAL_NUMBER_OF_TASKS))
-    for k, v in tasks.items():
-        if v is True:
-            print("\t {}".format(k))
+def gather_employee_todo_progress(employee_id):
+    url = 'https://jsonplaceholder.typicode.com/users/{}/todos'.format(employee_id)
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        print("Error: Failed to retrieve TODO list for employee ID:", employee_id)
+        return
+    
+    todos = response.json()
+    employee_name = todos[0]['name'].split()[0]  # Assumes the employee name is the same for all todos
+    
+    completed_tasks = [todo['title'] for todo in todos if todo['completed']]
+    num_completed_tasks = len(completed_tasks)
+    total_num_tasks = len(todos)
+    
+    print("Employee {} is done with tasks({}/{}):".format(employee_name, num_completed_tasks, total_num_tasks))
+    for task in completed_tasks:
+        print("\t", task)
+    
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print("Usage: python3 0-gather_data_from_an_API.py [employee_id]")
+    else:
+        employee_id = int(sys.argv[1])
+        gather_employee_todo_progress(employee_id)
